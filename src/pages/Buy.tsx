@@ -1,0 +1,98 @@
+import { useState } from 'react';
+import { Layout } from '@/components/layout/Layout';
+import { CarCard } from '@/components/cars/CarCard';
+import { CarFilters } from '@/components/cars/CarFilters';
+import { cars } from '@/data/cars';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+
+const Buy = () => {
+  const [selectedType, setSelectedType] = useState('All');
+  const [selectedFuel, setSelectedFuel] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredCars = cars.filter((car) => {
+    const matchesType = selectedType === 'All' || car.type === selectedType;
+    const matchesFuel = selectedFuel === 'All' || car.fuelType === selectedFuel;
+    const matchesSearch =
+      searchQuery === '' ||
+      car.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      car.brand.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesType && matchesFuel && matchesSearch;
+  });
+
+  return (
+    <Layout>
+      {/* Hero */}
+      <section className="bg-primary py-16 text-primary-foreground">
+        <div className="section-container">
+          <h1 className="mb-4 font-display text-3xl font-bold sm:text-4xl md:text-5xl">
+            Buy a Car
+          </h1>
+          <p className="mb-6 max-w-2xl text-primary-foreground/80">
+            Own your dream car today. Explore our collection of premium vehicles with flexible EMI
+            options.
+          </p>
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search cars..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-background pl-10"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Filters & Cars */}
+      <section className="py-12">
+        <div className="section-container">
+          <div className="mb-8">
+            <CarFilters
+              selectedType={selectedType}
+              selectedFuel={selectedFuel}
+              onTypeChange={setSelectedType}
+              onFuelChange={setSelectedFuel}
+            />
+          </div>
+
+          <div className="mb-6 flex items-center justify-between">
+            <p className="text-muted-foreground">
+              Showing <span className="font-semibold text-foreground">{filteredCars.length}</span>{' '}
+              cars available for purchase
+            </p>
+          </div>
+
+          {filteredCars.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredCars.map((car) => (
+                <CarCard key={car.id} car={car} variant="buy" />
+              ))}
+            </div>
+          ) : (
+            <div className="py-20 text-center">
+              <p className="text-lg text-muted-foreground">
+                No cars found matching your criteria.
+              </p>
+              <button
+                onClick={() => {
+                  setSelectedType('All');
+                  setSelectedFuel('All');
+                  setSearchQuery('');
+                }}
+                className="mt-4 text-accent underline"
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+    </Layout>
+  );
+};
+
+export default Buy;
