@@ -4,12 +4,12 @@ import { Layout } from '@/components/layout/Layout';
 import { DurationSelector } from '@/components/cars/DurationSelector';
 import { BookingProgress } from '@/components/booking/BookingProgress';
 import { CitySelect } from '@/components/common/CitySelect';
-import { cars } from '@/data/cars';
-import { calculateRentPrice, formatPrice, getFuelBadgeClass } from '@/utils/calculations';
+import { cars, rentDurations } from '@/data/cars';
+import { getRentPrice, formatPrice, getFuelBadgeClass } from '@/utils/calculations';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Star, Users, Fuel, Settings2, Shield, Check } from 'lucide-react';
+import { MapPin, Star, Users, Fuel, Settings2, Shield, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 const bookingSteps = ['Select Car', 'Choose Duration', 'Confirm Booking'];
@@ -38,7 +38,8 @@ const RentDetails = () => {
     );
   }
 
-  const totalPrice = calculateRentPrice(car.pricePerHour, selectedDuration);
+  const totalPrice = getRentPrice(car.rentPricing, selectedDuration);
+  const basePriceDisplay = car.rentPricing.hours6;
 
   const handleConfirmBooking = () => {
     if (!isAuthenticated) {
@@ -184,7 +185,7 @@ const RentDetails = () => {
 
                   {/* Duration Selector */}
                   <DurationSelector
-                    pricePerHour={car.pricePerHour}
+                    rentPricing={car.rentPricing}
                     selectedDuration={selectedDuration}
                     onDurationChange={setSelectedDuration}
                   />
@@ -204,8 +205,8 @@ const RentDetails = () => {
 
                 <div className="mb-6 space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Base Price</span>
-                    <span>{formatPrice(car.pricePerHour)}/hr</span>
+                    <span className="text-muted-foreground">Starting Price</span>
+                    <span>{formatPrice(basePriceDisplay)} / 6 hrs</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Duration</span>

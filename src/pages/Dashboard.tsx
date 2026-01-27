@@ -269,7 +269,7 @@ const Dashboard = () => {
                             </h3>
                             <p className="text-sm text-muted-foreground">{car.type}</p>
                             <p className="mt-1 font-bold text-accent">
-                              {formatPrice(car.pricePerHour)}/hr
+                              {formatPrice(car.rentPricing.hours6)} / 6 hrs
                             </p>
                           </div>
                           <Button

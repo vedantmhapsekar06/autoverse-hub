@@ -15,6 +15,9 @@ export const CarCard = ({ car, variant = 'rent', showQuickActions = true }: CarC
   const { isInWishlist, toggleWishlist } = useAuth();
   const inWishlist = isInWishlist(car.id);
 
+  // Get the 6-hour price for rent display
+  const rentDisplayPrice = car.rentPricing.hours6;
+
   return (
     <div className="car-card group">
       {/* Image Container */}
@@ -90,8 +93,8 @@ export const CarCard = ({ car, variant = 'rent', showQuickActions = true }: CarC
           <div>
             {variant === 'rent' ? (
               <>
-                <p className="price-tag">{formatPrice(car.pricePerHour)}</p>
-                <p className="price-unit">per hour</p>
+                <p className="price-tag">{formatPrice(rentDisplayPrice)}</p>
+                <p className="price-unit">for 6 hours</p>
               </>
             ) : (
               <>
