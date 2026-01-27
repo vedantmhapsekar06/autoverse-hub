@@ -1,16 +1,14 @@
 // AutoVerse - Pricing & EMI Calculations
 
-import { rentDurations } from '@/data/cars';
+import { RentPricing, rentDurations } from '@/data/cars';
 
 /**
- * Calculate rental price based on hourly rate and duration
+ * Get rental price for a specific duration from the car's pricing object
  */
-export const calculateRentPrice = (pricePerHour: number, hours: number): number => {
+export const getRentPrice = (rentPricing: RentPricing, hours: number): number => {
   const duration = rentDurations.find((d) => d.hours === hours);
-  const discount = duration?.discount || 0;
-  const basePrice = pricePerHour * hours;
-  const discountAmount = (basePrice * discount) / 100;
-  return Math.round(basePrice - discountAmount);
+  if (!duration) return rentPricing.hours6; // fallback
+  return rentPricing[duration.key];
 };
 
 /**

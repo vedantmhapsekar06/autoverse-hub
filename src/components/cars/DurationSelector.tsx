@@ -1,15 +1,15 @@
-import { rentDurations } from '@/data/cars';
-import { calculateRentPrice, formatPrice } from '@/utils/calculations';
+import { rentDurations, RentPricing } from '@/data/cars';
+import { formatPrice } from '@/utils/calculations';
 import { Clock } from 'lucide-react';
 
 interface DurationSelectorProps {
-  pricePerHour: number;
+  rentPricing: RentPricing;
   selectedDuration: number;
   onDurationChange: (hours: number) => void;
 }
 
 export const DurationSelector = ({
-  pricePerHour,
+  rentPricing,
   selectedDuration,
   onDurationChange,
 }: DurationSelectorProps) => {
@@ -18,7 +18,7 @@ export const DurationSelector = ({
       <h3 className="font-display text-lg font-semibold">Select Rent Duration</h3>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {rentDurations.map((duration) => {
-          const price = calculateRentPrice(pricePerHour, duration.hours);
+          const price = rentPricing[duration.key];
           const isSelected = selectedDuration === duration.hours;
 
           return (
@@ -32,9 +32,6 @@ export const DurationSelector = ({
               <span className={`text-lg font-bold ${isSelected ? 'text-accent' : 'text-foreground'}`}>
                 {formatPrice(price)}
               </span>
-              {duration.discount > 0 && (
-                <span className="text-xs text-success">Save {duration.discount}%</span>
-              )}
             </button>
           );
         })}
