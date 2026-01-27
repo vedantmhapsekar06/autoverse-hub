@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { cars } from '@/data/cars';
 
 interface User {
   id: string;
@@ -37,27 +38,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock bookings data
+// Get actual car images from data
+const getCar = (id: string) => cars.find(c => c.id === id);
+
+// Mock bookings data using actual car images
 const mockBookings: Booking[] = [
   {
     id: '1',
     carId: '3',
-    carName: 'Hyundai Creta',
-    carImage: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80',
+    carName: `${getCar('3')?.brand} ${getCar('3')?.name}`,
+    carImage: getCar('3')?.image || '',
     type: 'rent',
     date: '2024-01-15',
     duration: 24,
-    totalAmount: 7560,
+    totalAmount: getCar('3')?.rentPricing.hours24 || 3800,
     status: 'completed',
   },
   {
     id: '2',
     carId: '10',
-    carName: 'Tesla Model 3',
-    carImage: 'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=800&q=80',
+    carName: `${getCar('10')?.brand} ${getCar('10')?.name}`,
+    carImage: getCar('10')?.image || '',
     type: 'buy',
     date: '2024-02-01',
-    totalAmount: 6000000,
+    totalAmount: getCar('10')?.buyPrice || 3500000,
     status: 'confirmed',
   },
 ];
