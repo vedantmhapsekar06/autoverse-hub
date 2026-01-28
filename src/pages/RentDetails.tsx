@@ -4,9 +4,8 @@ import { Layout } from '@/components/layout/Layout';
 import { DurationSelector } from '@/components/cars/DurationSelector';
 import { BookingProgress } from '@/components/booking/BookingProgress';
 import { CitySelect } from '@/components/common/CitySelect';
-import { cars, rentDurations } from '@/data/cars';
+import { cars } from '@/data/cars';
 import { getRentPrice, formatPrice, getFuelBadgeClass } from '@/utils/calculations';
-import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, Users, Fuel, Settings2, Shield, Check } from 'lucide-react';
@@ -17,7 +16,6 @@ const bookingSteps = ['Select Car', 'Choose Duration', 'Confirm Booking'];
 const RentDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
   const { isAuthenticated, addBooking } = useAuth();
 
   const car = cars.find((c) => c.id === id);
@@ -43,8 +41,8 @@ const RentDetails = () => {
 
   const handleConfirmBooking = () => {
     if (!isAuthenticated) {
-      toast.error('Please login to continue');
-      navigate('/auth');
+      toast.error('Please login to confirm booking');
+      navigate('/auth', { state: { from: `/rent/${car.id}` } });
       return;
     }
 
@@ -61,7 +59,6 @@ const RentDetails = () => {
 
     setBookingConfirmed(true);
     setStep(2);
-    toast.success('Booking confirmed successfully!');
   };
 
   if (bookingConfirmed) {
@@ -73,10 +70,18 @@ const RentDetails = () => {
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success">
                 <Check className="h-8 w-8 text-success-foreground" />
               </div>
-              <h1 className="mb-2 font-display text-2xl font-bold">Booking Confirmed!</h1>
-              <p className="mb-6 text-muted-foreground">
-                Your rental booking has been successfully confirmed.
-              </p>
+              <h1 className="mb-2 font-display text-2xl font-bold">Booking Request Received!</h1>
+              
+              {/* Important Message */}
+              <div className="mx-auto mb-6 max-w-lg rounded-lg bg-accent/10 p-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent" />
+                  <p className="text-left text-sm text-foreground">
+                    <span className="font-semibold">Your booking request has been received.</span>{' '}
+                    Please visit the showroom to confirm your booking, take a test drive, and finalize the payment.
+                  </p>
+                </div>
+              </div>
 
               <div className="mb-6 rounded-lg bg-secondary p-4 text-left">
                 <div className="mb-4 flex items-center gap-4">

@@ -1,9 +1,10 @@
 import { Heart, Star, Users, Fuel, Settings2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Car } from '@/data/cars';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, getFuelBadgeClass } from '@/utils/calculations';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface CarCardProps {
   car: Car;
@@ -12,11 +13,30 @@ interface CarCardProps {
 }
 
 export const CarCard = ({ car, variant = 'rent', showQuickActions = true }: CarCardProps) => {
-  const { isInWishlist, toggleWishlist } = useAuth();
+  const navigate = useNavigate();
+  const { isAuthenticated, isInWishlist, toggleWishlist } = useAuth();
   const inWishlist = isInWishlist(car.id);
 
   // Get the 6-hour price for rent display
   const rentDisplayPrice = car.rentPricing.hours6;
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      toast.error('Please login to add to wishlist');
+      navigate('/auth');
+      return;
+    }
+    
+    toggleWishlist(car.id);
+    if (!inWishlist) {
+      toast.success('Added to wishlist');
+    } else {
+      toast.success('Removed from wishlist');
+    }
+  };
 
   return (
     <div className="car-card group">
@@ -30,10 +50,7 @@ export const CarCard = ({ car, variant = 'rent', showQuickActions = true }: CarC
         
         {/* Wishlist Button */}
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            toggleWishlist(car.id);
-          }}
+          onClick={handleWishlistClick}
           className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 shadow-md transition-all hover:bg-background"
         >
           <Heart

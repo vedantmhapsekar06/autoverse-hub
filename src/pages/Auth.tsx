@@ -1,20 +1,25 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Car, Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
+import { Car, Mail, Lock, User, Phone, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, signup, loginWithPhone, loginWithGoogle } = useAuth();
+
+  // Get redirect path from state or default to home
+  const from = (location.state as { from?: string })?.from || '/';
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -31,55 +36,70 @@ const Auth = () => {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const success = await login(loginEmail, loginPassword);
+    setError(null);
+    
+    const result = await login(loginEmail, loginPassword);
     setIsLoading(false);
 
-    if (success) {
+    if (result.success) {
       toast.success('Login successful!');
-      navigate('/');
+      navigate(from, { replace: true });
     } else {
-      toast.error('Invalid credentials');
+      setError(result.error || 'Login failed');
     }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const success = await signup(signupName, signupEmail, signupPassword);
+    setError(null);
+
+    // Basic validation
+    if (signupPassword.length < 6) {
+      setIsLoading(false);
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    const result = await signup(signupName, signupEmail, signupPassword);
     setIsLoading(false);
 
-    if (success) {
+    if (result.success) {
       toast.success('Account created successfully!');
-      navigate('/');
+      navigate(from, { replace: true });
     } else {
-      toast.error('Signup failed');
+      setError(result.error || 'Signup failed');
     }
   };
 
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     const success = await loginWithPhone(phoneNumber);
     setIsLoading(false);
 
     if (success) {
       toast.success('Login successful!');
-      navigate('/');
+      navigate(from, { replace: true });
     } else {
-      toast.error('Invalid phone number');
+      setError('Invalid phone number');
     }
   };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
+    setError(null);
     const success = await loginWithGoogle();
     setIsLoading(false);
 
     if (success) {
       toast.success('Login successful!');
-      navigate('/');
+      navigate(from, { replace: true });
     }
   };
+
+  const clearError = () => setError(null);
 
   return (
     <Layout>
@@ -100,7 +120,15 @@ const Auth = () => {
             </div>
 
             <div className="rounded-xl border border-border bg-card p-6">
-              <Tabs defaultValue="login" className="w-full">
+              {/* Error Display */}
+              {error && (
+                <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <Tabs defaultValue="login" className="w-full" onValueChange={clearError}>
                 <TabsList className="mb-6 grid w-full grid-cols-2">
                   <TabsTrigger value="login">Login</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -219,7 +247,7 @@ const Auth = () => {
                 <TabsContent value="signup">
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div>
-                      <Label htmlFor="name">Full Name</Label>
+                      <Label htmlFor="name">Full Name (Username)</Label>
                       <div className="relative mt-1">
                         <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                         <Input
@@ -257,11 +285,12 @@ const Auth = () => {
                         <Input
                           id="signup-password"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Create a password"
+                          placeholder="Create a password (min 6 characters)"
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
                           className="pl-10 pr-10"
                           required
+                          minLength={6}
                         />
                         <button
                           type="button"
