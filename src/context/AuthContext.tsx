@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { cars } from '@/data/cars';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -7,6 +8,14 @@ interface User {
   email: string;
   phone?: string;
   avatar?: string;
+}
+
+interface RegisteredUser {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
 }
 
 interface Booking {
@@ -19,6 +28,13 @@ interface Booking {
   duration?: number;
   totalAmount: number;
   status: 'confirmed' | 'completed' | 'cancelled';
+  paymentType?: 'full' | 'emi';
+  emiDetails?: {
+    downPayment: number;
+    interestRate: number;
+    tenure: number;
+    emiAmount: number;
+  };
 }
 
 interface AuthContextType {
@@ -26,14 +42,15 @@ interface AuthContextType {
   isAuthenticated: boolean;
   bookings: Booking[];
   wishlist: string[];
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   loginWithPhone: (phone: string) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   addBooking: (booking: Omit<Booking, 'id'>) => void;
-  toggleWishlist: (carId: string) => void;
+  toggleWishlist: (carId: string) => boolean; // returns false if not authenticated
   isInWishlist: (carId: string) => boolean;
+  requireAuth: (action: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,8 +58,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Get actual car images from data
 const getCar = (id: string) => cars.find(c => c.id === id);
 
+// Mock registered users database
+const initialRegisteredUsers: RegisteredUser[] = [
+  {
+    id: '1',
+    name: 'Rahul Kumar',
+    email: 'rahul@example.com',
+    password: 'password123',
+    phone: '+91 9876543210',
+  },
+];
+
 // Mock bookings data using actual car images
-const mockBookings: Booking[] = [
+const createMockBookings = (): Booking[] => [
   {
     id: '1',
     carId: '3',
@@ -54,69 +82,66 @@ const mockBookings: Booking[] = [
     totalAmount: getCar('3')?.rentPricing.hours24 || 3800,
     status: 'completed',
   },
-  {
-    id: '2',
-    carId: '10',
-    carName: `${getCar('10')?.brand} ${getCar('10')?.name}`,
-    carImage: getCar('10')?.image || '',
-    type: 'buy',
-    date: '2024-02-01',
-    totalAmount: getCar('10')?.buyPrice || 3500000,
-    status: 'confirmed',
-  },
 ];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>(['2', '5', '10']);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(initialRegisteredUsers);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock login - in real app would call API
-    if (email && password) {
-      setUser({
-        id: '1',
-        name: 'Rahul Kumar',
-        email: email,
-        phone: '+91 9876543210',
-      });
-      setBookings(mockBookings);
-      return true;
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    // Check if user exists with matching credentials
+    const existingUser = registeredUsers.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    );
+
+    if (!existingUser) {
+      // Check if email exists but password is wrong
+      const emailExists = registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+      if (emailExists) {
+        return { success: false, error: 'Incorrect password. Please try again.' };
+      }
+      return { success: false, error: 'No account found with this email. Please sign up first.' };
     }
-    return false;
+
+    setUser({
+      id: existingUser.id,
+      name: existingUser.name,
+      email: existingUser.email,
+      phone: existingUser.phone,
+    });
+    setBookings(createMockBookings());
+    return { success: true };
   };
 
   const loginWithPhone = async (phone: string): Promise<boolean> => {
     if (phone) {
-      setUser({
-        id: '1',
-        name: 'Rahul Kumar',
-        email: 'rahul@example.com',
+      const existingUser = registeredUsers.find((u) => u.phone === phone);
+      if (existingUser) {
+        setUser({
+          id: existingUser.id,
+          name: existingUser.name,
+          email: existingUser.email,
+          phone: phone,
+        });
+        setBookings(createMockBookings());
+        return true;
+      }
+      // Create new user with phone
+      const newUser: RegisteredUser = {
+        id: Date.now().toString(),
+        name: 'User',
+        email: `${phone.replace(/\D/g, '')}@autoverse.com`,
+        password: 'phone123',
         phone: phone,
-      });
-      setBookings(mockBookings);
-      return true;
-    }
-    return false;
-  };
-
-  const loginWithGoogle = async (): Promise<boolean> => {
-    // Mock Google login
-    setUser({
-      id: '1',
-      name: 'Rahul Kumar',
-      email: 'rahul.kumar@gmail.com',
-    });
-    setBookings(mockBookings);
-    return true;
-  };
-
-  const signup = async (name: string, email: string, password: string): Promise<boolean> => {
-    if (name && email && password) {
+      };
+      setRegisteredUsers((prev) => [...prev, newUser]);
       setUser({
-        id: '1',
-        name: name,
-        email: email,
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        phone: phone,
       });
       setBookings([]);
       return true;
@@ -124,9 +149,75 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return false;
   };
 
+  const loginWithGoogle = async (): Promise<boolean> => {
+    // Mock Google login - creates/finds user
+    const googleEmail = 'rahul.kumar@gmail.com';
+    const existingUser = registeredUsers.find((u) => u.email.toLowerCase() === googleEmail.toLowerCase());
+    
+    if (existingUser) {
+      setUser({
+        id: existingUser.id,
+        name: existingUser.name,
+        email: existingUser.email,
+      });
+      setBookings(createMockBookings());
+    } else {
+      const newUser: RegisteredUser = {
+        id: Date.now().toString(),
+        name: 'Rahul Kumar',
+        email: googleEmail,
+        password: 'google123',
+      };
+      setRegisteredUsers((prev) => [...prev, newUser]);
+      setUser({
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+      });
+      setBookings([]);
+    }
+    return true;
+  };
+
+  const signup = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    if (!name || !email || !password) {
+      return { success: false, error: 'Please fill in all fields.' };
+    }
+
+    // Check if email already exists
+    const emailExists = registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (emailExists) {
+      return { success: false, error: 'An account with this email already exists. Please login instead.' };
+    }
+
+    // Check if name already exists (optional - for unique username requirement)
+    const nameExists = registeredUsers.find((u) => u.name.toLowerCase() === name.toLowerCase());
+    if (nameExists) {
+      return { success: false, error: 'This username is already taken. Please choose a different name.' };
+    }
+
+    // Create new user
+    const newUser: RegisteredUser = {
+      id: Date.now().toString(),
+      name: name,
+      email: email,
+      password: password,
+    };
+    
+    setRegisteredUsers((prev) => [...prev, newUser]);
+    setUser({
+      id: newUser.id,
+      name: name,
+      email: email,
+    });
+    setBookings([]);
+    return { success: true };
+  };
+
   const logout = () => {
     setUser(null);
     setBookings([]);
+    setWishlist([]);
   };
 
   const addBooking = (booking: Omit<Booking, 'id'>) => {
@@ -137,13 +228,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setBookings((prev) => [newBooking, ...prev]);
   };
 
-  const toggleWishlist = (carId: string) => {
+  const toggleWishlist = (carId: string): boolean => {
+    if (!user) {
+      return false; // Not authenticated
+    }
     setWishlist((prev) =>
       prev.includes(carId) ? prev.filter((id) => id !== carId) : [...prev, carId]
     );
+    return true;
   };
 
   const isInWishlist = (carId: string) => wishlist.includes(carId);
+
+  const requireAuth = (action: string): boolean => {
+    return !!user;
+  };
 
   return (
     <AuthContext.Provider
@@ -160,6 +259,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         addBooking,
         toggleWishlist,
         isInWishlist,
+        requireAuth,
       }}
     >
       {children}

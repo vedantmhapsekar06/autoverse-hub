@@ -1,23 +1,31 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { formatPrice } from '@/utils/calculations';
+import { formatPrice, calculateTotalPayable } from '@/utils/calculations';
 import { Button } from '@/components/ui/button';
-import { Trash2, ShoppingBag, ArrowRight, Clock, CreditCard } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Trash2, ShoppingBag, ArrowRight, Clock, CreditCard, Banknote, MapPin, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Cart = () => {
   const navigate = useNavigate();
   const { items, removeFromCart, clearCart, getTotalAmount } = useCart();
   const { isAuthenticated, addBooking } = useAuth();
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [placedItems, setPlacedItems] = useState<typeof items>([]);
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
       toast.error('Please login to continue');
-      navigate('/auth');
+      navigate('/auth', { state: { from: '/cart' } });
       return;
     }
+
+    // Store items before clearing
+    setPlacedItems([...items]);
 
     // Add all items as bookings
     items.forEach((item) => {
@@ -34,9 +42,70 @@ const Cart = () => {
     });
 
     clearCart();
-    toast.success('Order placed successfully!');
-    navigate('/dashboard');
+    setOrderPlaced(true);
   };
+
+  // Order Confirmation Screen
+  if (orderPlaced) {
+    return (
+      <Layout>
+        <section className="py-16">
+          <div className="section-container max-w-2xl">
+            <div className="animate-scale-in rounded-xl border border-border bg-card p-8 text-center">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success">
+                <Check className="h-8 w-8 text-success-foreground" />
+              </div>
+              <h1 className="mb-2 font-display text-2xl font-bold">Order Placed Successfully!</h1>
+              
+              {/* Important Message */}
+              <div className="mx-auto mb-6 max-w-lg rounded-lg bg-accent/10 p-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent" />
+                  <p className="text-left text-sm text-foreground">
+                    <span className="font-semibold">Your booking request has been received.</span>{' '}
+                    Please visit the showroom to confirm your booking, take a test drive, and finalize the payment.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-6 space-y-3">
+                {placedItems.map((item) => (
+                  <div
+                    key={`${item.car.id}-${item.type}`}
+                    className="rounded-lg bg-secondary p-4 text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={item.car.image}
+                        alt={item.car.name}
+                        className="h-16 w-24 rounded-lg object-cover"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold">
+                          {item.car.brand} {item.car.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {item.type === 'rent' ? `${item.duration} Hours Rental` : 'Purchase'}
+                        </p>
+                      </div>
+                      <p className="font-bold text-accent">{formatPrice(item.totalPrice)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+                <Button onClick={() => navigate('/dashboard')}>View My Bookings</Button>
+                <Button variant="outline" onClick={() => navigate('/feedback')}>
+                  Leave Feedback
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </Layout>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -109,7 +178,11 @@ const Cart = () => {
                       ) : (
                         <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                           <CreditCard className="h-4 w-4" />
-                          EMI: {formatPrice(item.emiAmount || 0)}/month x {item.tenure} months
+                          {item.emiAmount ? (
+                            <>EMI: {formatPrice(item.emiAmount)}/month x {item.tenure} months</>
+                          ) : (
+                            'Full Payment'
+                          )}
                         </div>
                       )}
                     </div>
