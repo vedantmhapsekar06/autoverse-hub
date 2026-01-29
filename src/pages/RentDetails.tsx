@@ -70,15 +70,15 @@ const RentDetails = () => {
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success">
                 <Check className="h-8 w-8 text-success-foreground" />
               </div>
-              <h1 className="mb-2 font-display text-2xl font-bold">Booking Request Received!</h1>
+              <h1 className="mb-2 font-display text-2xl font-bold">Rental Booking Confirmed!</h1>
               
               {/* Important Message */}
               <div className="mx-auto mb-6 max-w-lg rounded-lg bg-accent/10 p-4">
                 <div className="flex items-start gap-3">
                   <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent" />
                   <p className="text-left text-sm text-foreground">
-                    <span className="font-semibold">Your booking request has been received.</span>{' '}
-                    Please visit the showroom to confirm your booking, take a test drive, and finalize the payment.
+                    <span className="font-semibold">Your rental booking has been confirmed!</span>{' '}
+                    Please visit our pickup location at the scheduled time with a valid ID and driving license. Our team will hand over the keys after a quick inspection.
                   </p>
                 </div>
               </div>
