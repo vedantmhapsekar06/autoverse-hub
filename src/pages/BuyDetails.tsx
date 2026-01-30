@@ -6,10 +6,11 @@ import { BookingProgress } from '@/components/booking/BookingProgress';
 import { cars } from '@/data/cars';
 import { formatPrice, formatPriceInLakhs, getFuelBadgeClass, calculateEMI, calculateTotalPayable } from '@/utils/calculations';
 import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Star, Users, Fuel, Settings2, Shield, Check, CreditCard, Banknote, MapPin } from 'lucide-react';
+import { Star, Users, Fuel, Settings2, Shield, Check, CreditCard, Banknote, MapPin, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 
 const buyingSteps = ['Select Car', 'Choose Payment', 'Confirm Order'];
@@ -18,7 +19,7 @@ const BuyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, addBooking } = useAuth();
-
+  const { addToCart } = useCart();
   const car = cars.find((c) => c.id === id);
 
   const [step, setStep] = useState(1);
@@ -80,6 +81,29 @@ const BuyDetails = () => {
     addBooking(bookingData);
     setOrderConfirmed(true);
     setStep(2);
+  };
+
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to add to cart');
+      navigate('/auth', { state: { from: `/buy/${car.id}` } });
+      return;
+    }
+
+    addToCart({
+      car,
+      type: 'buy',
+      totalPrice: car.buyPrice,
+      ...(paymentType === 'emi' && {
+        downPayment: emiDetails.downPayment || defaultDownPayment,
+        interestRate: emiDetails.interestRate,
+        tenure: emiDetails.tenure,
+        emiAmount: emiDetails.emi || defaultEmi,
+      }),
+    });
+
+    toast.success('Added to cart!');
+    navigate('/cart');
   };
 
   // Order Confirmation Screen
@@ -398,9 +422,15 @@ const BuyDetails = () => {
                     </div>
                   </div>
 
-                  <Button onClick={handlePlaceOrder} className="btn-accent w-full" size="lg">
-                    Place Order
-                  </Button>
+                  <div className="flex flex-col gap-3">
+                    <Button onClick={handlePlaceOrder} className="btn-accent w-full" size="lg">
+                      Place Order
+                    </Button>
+                    <Button onClick={handleAddToCart} variant="outline" className="w-full" size="lg">
+                      <ShoppingCart className="mr-2 h-5 w-5" />
+                      Add to Cart
+                    </Button>
+                  </div>
 
                   <p className="mt-4 text-center text-xs text-muted-foreground">
                     Contact our sales team for best deals

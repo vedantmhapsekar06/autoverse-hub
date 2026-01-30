@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/context/AuthContext';
@@ -5,6 +6,7 @@ import { cars } from '@/data/cars';
 import { formatPrice } from '@/utils/calculations';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BookingDetailModal } from '@/components/dashboard/BookingDetailModal';
 import {
   User,
   Mail,
@@ -21,6 +23,7 @@ import {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, bookings, wishlist, logout, isInWishlist, toggleWishlist } = useAuth();
+  const [selectedBooking, setSelectedBooking] = useState<typeof bookings[0] | null>(null);
 
   if (!isAuthenticated) {
     return (
@@ -150,7 +153,8 @@ const Dashboard = () => {
                       {rentBookings.map((booking) => (
                         <div
                           key={booking.id}
-                          className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center"
+                          className="flex cursor-pointer flex-col gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-accent/50 sm:flex-row sm:items-center"
+                          onClick={() => setSelectedBooking(booking)}
                         >
                           <img
                             src={booking.carImage}
@@ -186,6 +190,7 @@ const Dashboard = () => {
                               {formatPrice(booking.totalAmount)}
                             </p>
                           </div>
+                          <ChevronRight className="hidden h-5 w-5 text-muted-foreground sm:block" />
                         </div>
                       ))}
                     </div>
@@ -207,7 +212,8 @@ const Dashboard = () => {
                       {purchaseBookings.map((booking) => (
                         <div
                           key={booking.id}
-                          className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center"
+                          className="flex cursor-pointer flex-col gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-accent/50 sm:flex-row sm:items-center"
+                          onClick={() => setSelectedBooking(booking)}
                         >
                           <img
                             src={booking.carImage}
@@ -220,6 +226,11 @@ const Dashboard = () => {
                               <Calendar className="h-4 w-4" />
                               {booking.date}
                             </div>
+                            {booking.paymentType && (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {booking.paymentType === 'full' ? 'Full Payment' : 'EMI Payment'}
+                              </p>
+                            )}
                           </div>
                           <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
                             <span
@@ -235,6 +246,7 @@ const Dashboard = () => {
                               {formatPrice(booking.totalAmount)}
                             </p>
                           </div>
+                          <ChevronRight className="hidden h-5 w-5 text-muted-foreground sm:block" />
                         </div>
                       ))}
                     </div>
@@ -289,6 +301,13 @@ const Dashboard = () => {
           </div>
         </div>
       </section>
+
+      {/* Booking Detail Modal */}
+      <BookingDetailModal
+        booking={selectedBooking}
+        open={!!selectedBooking}
+        onClose={() => setSelectedBooking(null)}
+      />
     </Layout>
   );
 };
