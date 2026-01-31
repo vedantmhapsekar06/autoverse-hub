@@ -16,11 +16,7 @@ import mahindraThar from '@/assets/cars/mahindra-thar.jpg';
 import kiaSonet from '@/assets/cars/kia-sonet.jpg';
 import volkswagenTaigun from '@/assets/cars/volkswagen-taigun.jpg';
 import marutiBaleno from '@/assets/cars/maruti-baleno.jpg';
-import hyundaiCreta from '@/assets/cars/hyundai-creta.jpg';
-import toyotaFortuner from '@/assets/cars/toyota-fortuner.jpg';
-import hondaCity from '@/assets/cars/honda-city.jpg';
-import bmw3Series from '@/assets/cars/bmw-3-series.jpg';
-import mgHector from '@/assets/cars/mg-hector.jpg';
+
 
 export interface RentPricing {
   hours6: number;
